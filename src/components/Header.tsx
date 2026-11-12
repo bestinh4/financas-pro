@@ -15,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onOpenNewTxMod
     selectedYear,
     setSelectedYear,
     profileName,
+    setActiveTab,
   } = useFinance();
 
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
@@ -159,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onOpenNewTxMod
           <span className="font-label-md text-label-md font-semibold">Lançamento</span>
         </button>
 
-        <button onClick={() => (window as any).switchToTab?.('configuracoes')} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low" type="button" title="Configurações" aria-label="Configurações"><span className="material-symbols-outlined text-[20px]">settings</span></button>
+        <button onClick={() => setActiveTab('configuracoes')} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low" type="button" title="Configurações" aria-label="Configurações"><span className="material-symbols-outlined text-[20px]">settings</span></button>
 
         <div className="h-6 w-[1px] bg-surface-container"></div>
 
