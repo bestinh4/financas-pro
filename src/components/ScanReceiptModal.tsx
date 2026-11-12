@@ -125,8 +125,15 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      setErrorMessage('Por favor, envie um arquivo de imagem (JPG, PNG, WEBP) ou PDF.');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('Formato não suportado. Envie JPG, PNG, WEBP ou PDF.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage('O arquivo excede o limite de 10 MB. Escolha um arquivo menor.');
+      e.target.value = '';
       return;
     }
 
