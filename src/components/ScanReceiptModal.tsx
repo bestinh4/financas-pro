@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { getLocalDateISO } from '../utils/date';
 import { parseCurrencyInput } from '../utils/currency';
 
 interface ScanReceiptModalProps {
@@ -32,7 +33,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateISO(),
     type: 'Despesa' as 'Despesa' | 'Receita',
     category: 'Alimentação',
     accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
@@ -51,7 +52,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     setFormData({
       description: '',
       amount: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateISO(),
       type: 'Despesa',
       category: 'Alimentação',
       accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
@@ -100,7 +101,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       setFormData({
         description: data.description || 'Despesa Comercial',
         amount: data.amount ? data.amount.toString() : '',
-        date: data.date || new Date().toISOString().split('T')[0],
+        date: data.date || getLocalDateISO(),
         type: data.type === 'Receita' ? 'Receita' : 'Despesa',
         category: data.category || 'Outros',
         accountOrCard: matchedAcc,
