@@ -19,6 +19,13 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
   const [accountOrCard, setAccountOrCard] = useState(accounts[0]?.id || creditCards[0]?.id || '');
   const [notes, setNotes] = useState('');
 
+  // The modal may mount before the first account is created. Keep the displayed
+  // fallback selection and the submitted selection in sync with live context data.
+  const effectiveAccountOrCard =
+    accounts.some((account) => account.id === accountOrCard) || creditCards.some((card) => card.id === accountOrCard)
+      ? accountOrCard
+      : accounts[0]?.id || creditCards[0]?.id || '';
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -29,9 +36,9 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
       return;
     }
 
-    const isCard = creditCards.some((c) => c.id === accountOrCard);
-    const selectedAccount = accounts.find((account) => account.id === accountOrCard);
-    const selectedCard = creditCards.find((card) => card.id === accountOrCard);
+    const isCard = creditCards.some((c) => c.id === effectiveAccountOrCard);
+    const selectedAccount = accounts.find((account) => account.id === effectiveAccountOrCard);
+    const selectedCard = creditCards.find((card) => card.id === effectiveAccountOrCard);
     const linkedAccount = selectedCard ? accounts.find((account) => account.id === selectedCard.linkedAccountId) : selectedAccount;
     if (!linkedAccount) {
       showToast('Conta necessária', 'Cadastre uma conta bancária válida antes de registrar este lançamento ou vincule o cartão a uma conta existente.', 'warning');
@@ -46,7 +53,7 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
       category,
       paymentMethod: isCard ? 'cartao' : 'conta',
       accountId: linkedAccount.id,
-      cardId: isCard ? accountOrCard : undefined,
+      cardId: isCard ? effectiveAccountOrCard : undefined,
       status: type === 'Receita' ? 'Recebido' : 'Pago',
       notes: notes.trim() || undefined,
     });
@@ -165,7 +172,7 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
               Conta ou Cartão
             </label>
             <select
-              value={accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
+              value={effectiveAccountOrCard}
               onChange={(e) => setAccountOrCard(e.target.value)}
               className="bg-surface-container-low p-2 rounded-lg text-on-surface border border-transparent focus:border-secondary focus:outline-none cursor-pointer"
             >

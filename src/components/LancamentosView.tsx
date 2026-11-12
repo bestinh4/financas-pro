@@ -19,6 +19,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
     accounts,
     creditCards,
     showToast,
+    setActiveTab,
   } = useFinance();
 
   // Form state for inline creation
@@ -52,10 +53,16 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
       return;
     }
 
-    const selectedCard = creditCards.find((card) => card.id === formData.accountOrCard);
+    const hasCurrentSelection =
+      accounts.some((account) => account.id === formData.accountOrCard) ||
+      creditCards.some((card) => card.id === formData.accountOrCard);
+    const effectiveAccountOrCard = hasCurrentSelection
+      ? formData.accountOrCard
+      : accounts[0]?.id || creditCards[0]?.id || '';
+    const selectedCard = creditCards.find((card) => card.id === effectiveAccountOrCard);
     const linkedAccount = selectedCard
       ? accounts.find((account) => account.id === selectedCard.linkedAccountId)
-      : accounts.find((account) => account.id === formData.accountOrCard);
+      : accounts.find((account) => account.id === effectiveAccountOrCard);
 
     if (!linkedAccount) {
       showToast('Conta necessária', 'Selecione uma conta válida ou vincule o cartão a uma conta cadastrada.', 'warning');
@@ -280,27 +287,46 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
               <label className="font-label-sm text-label-sm text-on-surface-variant font-medium">
                 Conta / Meio de Liquidação
               </label>
-              <select
-                required
-                value={formData.accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
-                onChange={(e) => setFormData({ ...formData, accountOrCard: e.target.value })}
-                className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface focus:outline-none border border-transparent focus:border-secondary cursor-pointer"
-              >
-                <optgroup label="Contas Bancárias">
-                  {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Cartões de Crédito">
-                  {creditCards.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.issuer})
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
+{accounts.length === 0 && creditCards.length === 0 ? (
+                <div className="flex flex-col gap-2">
+                  <div className="rounded-lg border border-outline-variant bg-surface-container-low p-3 text-body-sm text-on-surface-variant">
+                    Nenhuma conta ou cartão cadastrado. Cadastre uma conta bancária para habilitar os lançamentos.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFormOpen(false);
+                      setActiveTab('contas');
+                    }}
+                    className="w-full rounded-lg border border-secondary px-3 py-2 text-body-sm font-semibold text-secondary hover:bg-secondary/10 transition-colors"
+                  >
+                    Ir para cadastro de contas
+                  </button>
+                </div>
+              ) : (
+                <select
+                  required
+                  value={formData.accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
+                  onChange={(e) => setFormData({ ...formData, accountOrCard: e.target.value })}
+                  className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface focus:outline-none border border-transparent focus:border-secondary cursor-pointer"
+                >
+                  <option value="" disabled>Selecione uma conta ou cartão</option>
+                  {accounts.length > 0 && (
+                    <optgroup label="Contas Bancárias">
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {creditCards.length > 0 && (
+                    <optgroup label="Cartões de Crédito">
+                      {creditCards.map((card) => (
+                        <option key={card.id} value={card.id}>{card.name} ({card.issuer})</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              )}
             </div>
 
             <div className="flex items-end justify-end gap-2">
