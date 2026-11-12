@@ -19,6 +19,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onOpenNewTxMod
   } = useFinance();
 
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const monthsList = [
@@ -38,6 +40,40 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onOpenNewTxMod
 
   const currentMonthLabel =
     monthsList.find((m) => m.value === selectedMonth)?.label || monthsList[new Date().getMonth()].label;
+
+  useEffect(() => {
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    const handleInstalled = () => {
+      setIsAppInstalled(true);
+      setInstallPrompt(null);
+    };
+    window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true) {
+      setIsAppInstalled(true);
+    }
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice?.outcome === 'accepted') setIsAppInstalled(true);
+      setInstallPrompt(null);
+      return;
+    }
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    window.alert(isIOS
+      ? 'Para instalar no iPhone/iPad: abra este site no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.'
+      : 'Para instalar: abra o menu do navegador (⋮) e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.');
+  };
 
   // Close popovers on click outside
   useEffect(() => {
@@ -138,6 +174,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onOpenNewTxMod
 
       {/* Right Actions: Notifications, Sync, Profile */}
       <div className="flex items-center gap-1.5 sm:gap-space-md">
+        {!isAppInstalled && (
+          <button
+            onClick={handleInstallApp}
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-tertiary-fixed/70 hover:bg-tertiary-fixed text-on-tertiary-fixed border border-tertiary-fixed rounded-lg transition-colors shadow-xs cursor-pointer"
+            title="Instalar Finanças Pro no celular"
+            aria-label="Instalar aplicativo Finanças Pro"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[18px]">install_mobile</span>
+            <span className="font-label-md text-label-md font-semibold hidden sm:inline">Instalar app</span>
+          </button>
+        )}
         {/* Scanner IA Button */}
         {onOpenScanReceipt && (
           <button
