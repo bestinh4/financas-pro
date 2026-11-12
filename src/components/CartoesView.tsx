@@ -56,13 +56,13 @@ export const CartoesView: React.FC = () => {
           const invoiceAmount = getCardInvoice(card.id);
           const limitLivre = Math.max(0, card.limit - invoiceAmount);
           const usedPercent = card.limit > 0 ? Math.min(100, (invoiceAmount / card.limit) * 100) : 0;
-          const isXP = cardIndex % 2 === 0;
+          const isPrimaryStyle = cardIndex % 2 === 0;
 
           return (
             <div
               key={card.id}
               className={`${
-                isXP
+                isPrimaryStyle
                   ? 'bg-primary-container text-on-primary shadow-card-dark'
                   : 'bg-gradient-to-bl from-secondary-container to-secondary text-on-secondary shadow-card-secondary'
               } rounded-xl p-space-lg shadow-card-hover relative overflow-hidden flex flex-col justify-between`}
@@ -71,14 +71,14 @@ export const CartoesView: React.FC = () => {
                 <div>
                   <span
                     className={`font-label-sm text-label-sm ${
-                      isXP ? 'text-primary-fixed' : 'text-secondary-fixed'
+                      isPrimaryStyle ? 'text-primary-fixed' : 'text-secondary-fixed'
                     } uppercase tracking-widest font-semibold`}
                   >
                     {card.issuer}
                   </span>
                   <h3
                     className={`font-headline-md text-headline-md ${
-                      isXP ? 'text-on-primary' : 'text-on-secondary'
+                      isPrimaryStyle ? 'text-on-primary' : 'text-on-secondary'
                     } mt-1`}
                   >
                     {card.name}
@@ -86,24 +86,24 @@ export const CartoesView: React.FC = () => {
                 </div>
                 <span
                   className={`material-symbols-outlined ${
-                    isXP ? 'text-tertiary-fixed' : 'text-secondary-fixed'
+                    isPrimaryStyle ? 'text-tertiary-fixed' : 'text-secondary-fixed'
                   } text-[32px]`}
                 >
-                  {isXP ? 'contactless' : 'credit_card'}
+                  {isPrimaryStyle ? 'contactless' : 'credit_card'}
                 </span>
               </div>
 
               <div className="my-space-md">
                 <span
                   className={`font-label-sm text-label-sm ${
-                    isXP ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'
+                    isPrimaryStyle ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'
                   }`}
                 >
                   Vencimento: dia {card.dueDay}
                 </span>
                 <div
                   className={`font-metric-display text-metric-display ${
-                    isXP ? 'text-on-primary' : 'text-on-secondary'
+                    isPrimaryStyle ? 'text-on-primary' : 'text-on-secondary'
                   } font-bold`}
                 >
                   R$ {formatBRL(invoiceAmount)}
@@ -112,16 +112,16 @@ export const CartoesView: React.FC = () => {
 
               <div className="flex flex-col gap-2 pt-space-xs border-t border-white/20">
                 <div className="flex justify-between font-label-sm text-label-sm">
-                  <span className={isXP ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'}>
+                  <span className={isPrimaryStyle ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'}>
                     Limite Usado: R$ {formatBRL(invoiceAmount)}
                   </span>
-                  <span className={isXP ? 'text-tertiary-fixed font-semibold' : 'text-white font-semibold'}>
+                  <span className={isPrimaryStyle ? 'text-tertiary-fixed font-semibold' : 'text-white font-semibold'}>
                     Limite Livre: R$ {formatBRL(limitLivre)}
                   </span>
                 </div>
                 <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
                   <div
-                    className={`${isXP ? 'bg-tertiary-fixed' : 'bg-secondary-fixed'} h-full rounded-full transition-all duration-500`}
+                    className={`${isPrimaryStyle ? 'bg-tertiary-fixed' : 'bg-secondary-fixed'} h-full rounded-full transition-all duration-500`}
                     style={{ width: `${usedPercent}%` }}
                   ></div>
                 </div>
