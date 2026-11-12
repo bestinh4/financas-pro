@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#073b9b"/><stop offset=".52" stop-color="#071b50"/><stop offset="1" stop-color="#020b2b"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b6ff62"/><stop offset=".55" stop-color="#20e66a"/><stop offset="1" stop-color="#008b72"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff58a"/><stop offset=".45" stop-color="#ffb900"/><stop offset="1" stop-color="#e76a00"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<rect x="8" y="8" width="496" height="496" rx="105" fill="none" stroke="#168cff" stroke-width="8"/>
+<g fill="url(#green)" stroke="#8eff8a" stroke-width="3">
+ <rect x="102" y="295" width="62" height="126" rx="12"/><rect x="181" y="251" width="62" height="170" rx="12"/><rect x="260" y="204" width="62" height="217" rx="12"/>
+</g>
+<path d="M55 300 C145 278 219 246 282 195 C329 157 359 119 394 75" fill="none" stroke="url(#green)" stroke-width="28" stroke-linecap="round"/>
+<path d="M351 81 L413 58 L415 127" fill="none" stroke="#a8ff78" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M72 427 C160 468 293 466 409 389 C446 364 462 336 458 310" fill="none" stroke="url(#gold)" stroke-width="13" stroke-linecap="round"/>
+<g transform="translate(350 365)">
+ <ellipse cx="48" cy="65" rx="76" ry="24" fill="#b64a00"/>
+ <path d="M-28 13 V65 C-28 78 6 90 48 90 S124 78 124 65 V13" fill="url(#gold)" stroke="#ffdf58" stroke-width="5"/>
+ <ellipse cx="48" cy="13" rx="76" ry="24" fill="url(#gold)" stroke="#fff07b" stroke-width="6"/>
+ <ellipse cx="48" cy="13" rx="52" ry="12" fill="#e98b00"/>
+</g>
+<g transform="translate(291 374) rotate(-15)">
+ <circle r="70" fill="url(#gold)" stroke="#fff58c" stroke-width="8"/>
+ <circle r="56" fill="none" stroke="#d97800" stroke-width="5"/>
+ <text y="24" text-anchor="middle" font-family="Arial,sans-serif" font-size="84" font-weight="bold" fill="#fff3a0">$</text>
+</g>
+</svg>
