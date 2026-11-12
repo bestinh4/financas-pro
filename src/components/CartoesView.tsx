@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 export const CartoesView: React.FC = () => {
-  const { creditCards, transactions, accounts, payCardInvoice, showToast } = useFinance();
+  const { creditCards, transactions, accounts, payCardInvoice, addCreditCard, setActiveTab, showToast } = useFinance();
 
   const [payingCardId, setPayingCardId] = useState<string | null>(null);
   const [payFromAccount, setPayFromAccount] = useState<string>(accounts[0]?.id || '');
+  const [isCreatingCard, setIsCreatingCard] = useState(false);
+  const [cardForm, setCardForm] = useState({ name: '', issuer: '', limit: '', closingDay: '1', dueDay: '10', linkedAccountId: accounts[0]?.id || '' });
 
   const formatBRL = (val: number) =>
     val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -15,6 +18,25 @@ export const CartoesView: React.FC = () => {
     return transactions
       .filter((tx) => !tx.isInactive && tx.paymentMethod === 'cartao' && tx.cardId === cardId && !tx.invoiceSettled)
       .reduce((sum, tx) => sum + tx.amount, 0);
+  };
+
+  const handleCreateCard = (event: React.FormEvent) => {
+    event.preventDefault();
+    const limit = parseCurrencyInput(cardForm.limit);
+    const success = addCreditCard({
+      name: cardForm.name.trim(),
+      issuer: cardForm.issuer.trim(),
+      limit,
+      closingDay: Number(cardForm.closingDay),
+      dueDay: Number(cardForm.dueDay),
+      color: '#24324a',
+      bgGradient: 'bg-primary-container',
+      linkedAccountId: cardForm.linkedAccountId,
+    });
+    if (success) {
+      setIsCreatingCard(false);
+      setCardForm({ name: '', issuer: '', limit: '', closingDay: '1', dueDay: '10', linkedAccountId: accounts[0]?.id || '' });
+    }
   };
 
   const handlePayInvoice = (cardId: string, invoiceAmount: number) => {
@@ -40,6 +62,16 @@ export const CartoesView: React.FC = () => {
           <h2 className="font-headline-md text-headline-md text-on-surface">
             Cartões &amp; Faturas
           </h2>
+          <button
+            type="button"
+            onClick={() => setIsCreatingCard((open) => !open)}
+            disabled={accounts.length === 0}
+            title={accounts.length === 0 ? 'Cadastre uma conta antes de adicionar um cartão' : 'Adicionar cartão'}
+            className="px-3 py-2 rounded-lg bg-primary text-on-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            + Novo cartão
+          </button>
+          {accounts.length === 0 && <button type="button" onClick={() => setActiveTab('contas')} className="px-3 py-2 rounded-lg border border-surface-container text-on-surface font-semibold">Cadastrar conta primeiro</button>}
         </div>
 
         <div className="flex items-center gap-space-sm bg-surface-container-low px-3 py-1.5 rounded-lg border border-secondary/20">
@@ -49,6 +81,39 @@ export const CartoesView: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {isCreatingCard && (
+        <form onSubmit={handleCreateCard} className="bg-surface-container-lowest rounded-xl p-space-lg border border-surface-container shadow-card flex flex-col gap-3">
+          <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Cadastrar cartão de crédito</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Nome do cartão
+              <input required maxLength={60} value={cardForm.name} onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })} placeholder="Ex.: Visa Platinum" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Banco / emissor
+              <input required maxLength={60} value={cardForm.issuer} onChange={(e) => setCardForm({ ...cardForm, issuer: e.target.value })} placeholder="Ex.: Banco emissor" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Limite total (R$)
+              <input required inputMode="decimal" value={cardForm.limit} onChange={(e) => setCardForm({ ...cardForm, limit: e.target.value })} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Conta para pagamento
+              <select required value={cardForm.linkedAccountId} onChange={(e) => setCardForm({ ...cardForm, linkedAccountId: e.target.value })} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface">
+                <option value="">Selecione uma conta</option>
+                {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Dia de fechamento
+              <input required type="number" min="1" max="31" value={cardForm.closingDay} onChange={(e) => setCardForm({ ...cardForm, closingDay: e.target.value })} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Dia de vencimento
+              <input required type="number" min="1" max="31" value={cardForm.dueDay} onChange={(e) => setCardForm({ ...cardForm, dueDay: e.target.value })} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setIsCreatingCard(false)} className="px-3 py-2 rounded-lg border border-surface-container text-on-surface">Cancelar</button>
+            <button type="submit" className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold">Salvar cartão</button>
+          </div>
+        </form>
+      )}
 
       {/* Resumo dos cartões cadastrados */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg">

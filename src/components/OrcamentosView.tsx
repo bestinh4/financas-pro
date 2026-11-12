@@ -3,10 +3,13 @@ import { useFinance } from '../context/FinanceContext';
 import { parseCurrencyInput } from '../utils/currency';
 
 export const OrcamentosView: React.FC = () => {
-  const { budgets, categoryBreakdown, updateBudget, showToast } = useFinance();
+  const { budgets, categoryBreakdown, addBudget, updateBudget, showToast } = useFinance();
 
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newLimitInput, setNewLimitInput] = useState<string>('');
+  const [isCreatingBudget, setIsCreatingBudget] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
 
   const formatBRL = (val: number) =>
     val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -19,6 +22,21 @@ export const OrcamentosView: React.FC = () => {
       return bNorm.includes(cNorm) || cNorm.includes(bNorm.split(' ')[0]);
     });
     return match ? match.amount : 0;
+  };
+
+  const handleCreateBudget = (event: React.FormEvent) => {
+    event.preventDefault();
+    const success = addBudget({
+      category: newCategory.trim(),
+      icon: 'savings',
+      color: '#0051d5',
+      limit: parseCurrencyInput(newBudgetLimit),
+    });
+    if (success) {
+      setNewCategory('');
+      setNewBudgetLimit('');
+      setIsCreatingBudget(false);
+    }
   };
 
   const handleStartEdit = (cat: string, currentLimit: number) => {
@@ -47,6 +65,10 @@ export const OrcamentosView: React.FC = () => {
           <h2 className="font-headline-md text-headline-md text-on-surface">
             Orçamento &amp; Tetos de Gastos
           </h2>
+          <button type="button" onClick={() => setIsCreatingBudget((open) => !open)} className="px-3 py-2 rounded-lg bg-primary text-on-primary font-semibold">
+            + Novo orçamento
+          </button>
+
           <p className="font-body-md text-body-md text-on-surface-variant">
             Acompanhe o ritmo de consumo de cada categoria e previna estouros orçamentários
           </p>
@@ -61,8 +83,30 @@ export const OrcamentosView: React.FC = () => {
         </div>
       </div>
 
+      {isCreatingBudget && (
+        <form onSubmit={handleCreateBudget} className="bg-surface-container-lowest rounded-xl p-space-lg border border-surface-container shadow-card flex flex-col gap-3">
+          <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Novo limite mensal</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Categoria
+              <select required value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface">
+                <option value="">Selecione uma categoria</option>
+                {['Moradia', 'Alimentação', 'Transporte', 'Saúde & Cuidados', 'Lazer & Cultura', 'Outros'].map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Limite mensal (R$)
+              <input required inputMode="decimal" value={newBudgetLimit} onChange={(e) => setNewBudgetLimit(e.target.value)} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setIsCreatingBudget(false)} className="px-3 py-2 rounded-lg border border-surface-container text-on-surface">Cancelar</button>
+            <button type="submit" className="px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold">Criar orçamento</button>
+          </div>
+        </form>
+      )}
+
       {/* Grid de Tetos Orçamentários */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+        {budgets.length === 0 && <div className="col-span-full rounded-xl border border-dashed border-surface-container p-space-lg text-center text-body-sm text-on-surface-variant">Nenhum orçamento cadastrado. Crie seu primeiro limite mensal para começar a acompanhar os gastos.</div>}
         {budgets.map((b) => {
           const spent = getCategorySpend(b.category);
           const percent = Math.min(100, Math.round((spent / b.limit) * 100));
@@ -141,8 +185,8 @@ export const OrcamentosView: React.FC = () => {
               {editingCategory === b.category ? (
                 <div className="mt-4 pt-3 border-t border-surface-container flex items-center gap-2">
                   <input
-                    type="number"
-                    step="50"
+                    type="text"
+                    inputMode="decimal"
                     value={newLimitInput}
                     onChange={(e) => setNewLimitInput(e.target.value)}
                     className="w-full bg-surface-container-low text-body-sm text-on-surface p-1.5 rounded-lg border border-secondary focus:outline-none"

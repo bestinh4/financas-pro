@@ -295,8 +295,8 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
                 Valor da Transferência (R$)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 min="0.01"
                 required
                 placeholder="Ex: 5.000,00"

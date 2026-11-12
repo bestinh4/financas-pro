@@ -325,8 +325,8 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-on-surface-variant font-medium">R$</span>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       required
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
