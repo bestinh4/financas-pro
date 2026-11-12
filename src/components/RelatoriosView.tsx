@@ -22,32 +22,25 @@ export const RelatoriosView: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const activeTx = transactions.filter((t) => !t.isInactive);
-    const headers = ['ID', 'Data', 'Descricao', 'Categoria', 'Tipo', 'Conta', 'Valor', 'Status'];
-    const rows = activeTx.map((t) => [
-      t.id,
-      t.date,
-      `"${t.description.replace(/"/g, '""')}"`,
-      t.category,
-      t.type,
-      t.accountId,
-      t.amount.toFixed(2),
-      t.status,
-    ]);
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
+    const periodPrefix = selectedYear + '-' + selectedMonth.padStart(2, '0');
+    const activeTx = transactions.filter((transaction) => !transaction.isInactive && transaction.date?.startsWith(periodPrefix));
+    const headers = ['ID', 'Data', 'Descrição', 'Categoria', 'Tipo', 'Conta', 'Valor', 'Status'];
+    const escapeCsv = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"';
+    const rows = activeTx.map((transaction) => [
+      transaction.id, transaction.date, transaction.description, transaction.category,
+      transaction.type, transaction.accountId, transaction.amount.toFixed(2), transaction.status,
+    ].map(escapeCsv).join(';'));
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `DRE_FinancasPro_${selectedYear}_${selectedMonth}.csv`);
+    link.href = url;
+    link.download = 'DRE_FinancasPro_' + selectedYear + '_' + selectedMonth + '.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    showToast('DRE Exportado com Sucesso', 'Arquivo CSV baixado para conferência.', 'success');
+    URL.revokeObjectURL(url);
+    showToast('DRE exportado', activeTx.length + ' lançamentos do período foram incluídos no CSV.', 'success');
   };
 
   const handlePrint = () => {
