@@ -13,7 +13,7 @@ export const parseCurrencyInput = (raw: string): number => {
  * Accepts pasted values with either Brazilian or international separators.
  */
 export const formatCurrencyInput = (raw: string): string => {
-  const digits = raw.replace(/\\D/g, '');
+  const digits = raw.replace(/\D/g, '');
   if (!digits) return '';
   const cents = Number(digits) / 100;
   return cents.toLocaleString('pt-BR', {
