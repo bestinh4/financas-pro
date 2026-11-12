@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface ContasViewProps {
   onOpenNewAccountModal: () => void;
@@ -38,7 +39,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
       setErrorMessage('A conta de origem e destino não podem ser iguais. Selecione contas distintas.');
       return;
     }
-    const val = parseFloat(transfData.amount);
+    const val = parseCurrencyInput(transfData.amount);
     if (isNaN(val) || val <= 0) {
       setErrorMessage('Informe um valor de transferência válido.');
       return;
