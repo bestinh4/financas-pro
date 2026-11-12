@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface ScanReceiptModalProps {
   isOpen: boolean;
@@ -142,7 +143,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
 
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(formData.amount);
+    const val = parseCurrencyInput(formData.amount);
     if (!formData.description.trim() || isNaN(val) || val <= 0) {
       showToast('Campos Inválidos', 'Verifique o valor e a descrição antes de salvar.', 'warning');
       return;
