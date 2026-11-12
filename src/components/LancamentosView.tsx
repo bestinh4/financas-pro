@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { Transaction } from '../types';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface LancamentosViewProps {
   onOpenScanReceipt?: () => void;
@@ -28,7 +29,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
     amount: '',
     type: 'Despesa' as 'Despesa' | 'Receita',
     category: 'Moradia',
-    accountOrCard: 'itau',
+    accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
   });
 
   // Additional filter for Status in this view
@@ -45,13 +46,26 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(formData.amount);
-    if (!formData.description.trim() || isNaN(val) || val <= 0) {
+    const val = parseCurrencyInput(formData.amount);
+    if (!formData.date || !formData.description.trim() || !Number.isFinite(val) || val <= 0) {
       showToast('Campos Inválidos', 'Preencha uma descrição válida e um valor positivo.', 'warning');
       return;
     }
 
-    const isCard = creditCards.some((c) => c.id === formData.accountOrCard);
+    const selectedCard = creditCards.find((card) => card.id === formData.accountOrCard);
+    const linkedAccount = selectedCard
+      ? accounts.find((account) => account.id === selectedCard.linkedAccountId)
+      : accounts.find((account) => account.id === formData.accountOrCard);
+
+    if (!linkedAccount) {
+      showToast('Conta necessária', 'Selecione uma conta válida ou vincule o cartão a uma conta cadastrada.', 'warning');
+      return;
+    }
+
+    if (selectedCard && formData.type === 'Receita') {
+      showToast('Meio de recebimento inválido', 'Receitas não podem ser registradas em um cartão de crédito. Selecione uma conta bancária.', 'warning');
+      return;
+    }
 
     addTransaction({
       date: formData.date,
@@ -59,9 +73,9 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
       amount: val,
       type: formData.type,
       category: formData.category,
-      paymentMethod: isCard ? 'cartao' : 'conta',
-      accountId: isCard ? 'itau' : formData.accountOrCard,
-      cardId: isCard ? formData.accountOrCard : undefined,
+      paymentMethod: selectedCard ? 'cartao' : 'conta',
+      accountId: linkedAccount.id,
+      cardId: selectedCard?.id,
       status: formData.type === 'Receita' ? 'Recebido' : 'Pago',
     });
 
@@ -71,7 +85,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
       amount: '',
       type: 'Despesa',
       category: 'Moradia',
-      accountOrCard: 'itau',
+      accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
     });
     setIsFormOpen(false);
   };
@@ -218,9 +232,8 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
                 Valor (R$)
               </label>
               <input
-                type="number"
-                step="0.01"
-                min="0.01"
+                type="text"
+                inputMode="decimal"
                 required
                 placeholder="0,00"
                 value={formData.amount}
@@ -268,7 +281,8 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
                 Conta / Meio de Liquidação
               </label>
               <select
-                value={formData.accountOrCard}
+                required
+                value={formData.accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
                 onChange={(e) => setFormData({ ...formData, accountOrCard: e.target.value })}
                 className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface focus:outline-none border border-transparent focus:border-secondary cursor-pointer"
               >
