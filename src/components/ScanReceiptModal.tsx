@@ -194,9 +194,6 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                 <h3 className="font-headline-md text-headline-md text-on-surface">
                   Scanner Inteligente com IA
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed tracking-wide uppercase">
-                  Gemini 3.8
-                </span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 Envie a foto de um comprovante, cupom ou nota fiscal para preenchimento automático.
@@ -289,7 +286,149 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                         Precisão da IA: {extractedData.confidence}%
                       </span>
                     )}
-      </div>
-    </div>
-  );
-};
+                    <span>Revise os dados abaixo antes de confirmar o lançamento.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {errorMessage && (
+              <div className="p-3 bg-error-container text-error rounded-xl text-body-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Editable Form with Extracted Data */}
+            <form onSubmit={handleSaveTransaction} className="flex flex-col gap-space-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                {/* Descrição */}
+                <div className="sm:col-span-2">
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Estabelecimento / Favorecido *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-body-md text-on-surface focus:outline-none focus:border-secondary font-medium"
+                    placeholder="Ex: Restaurante La Guapa"
+                  />
+                </div>
+
+                {/* Valor */}
+                <div>
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Valor (R$) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-on-surface-variant font-medium">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      className="w-full pl-10 bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-headline-md font-bold text-on-surface focus:outline-none focus:border-secondary"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+
+                {/* Data */}
+                <div>
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Data da Operação *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-body-md text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+
+                {/* Categoria */}
+                <div>
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Categoria *
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-body-md text-on-surface focus:outline-none focus:border-secondary"
+                  >
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Moradia">Moradia</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Saúde & Cuidados">Saúde &amp; Cuidados</option>
+                    <option value="Lazer & Cultura">Lazer &amp; Cultura</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+
+                {/* Conta ou Cartão de Pagamento */}
+                <div>
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Conta de Liquidação / Cartão *
+                  </label>
+                  <select
+                    value={formData.accountOrCard}
+                    onChange={(e) => setFormData({ ...formData, accountOrCard: e.target.value })}
+                    className="w-full bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-body-md text-on-surface focus:outline-none focus:border-secondary"
+                  >
+                    <optgroup label="Contas Bancárias">
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          Conta: {acc.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Cartões de Crédito">
+                      {creditCards.map((card) => (
+                        <option key={card.id} value={card.id}>
+                          Cartão: {card.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Observações / Detalhes lidos pela IA */}
+                <div className="sm:col-span-2">
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant font-semibold mb-1">
+                    Observações / Itens Extraídos
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full bg-surface-container-low border border-surface-container rounded-lg p-2 text-body-sm text-on-surface focus:outline-none focus:border-secondary"
+                    placeholder="Itens identificados, CNPJ ou código de autenticação"
+                  />
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface-container">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2 rounded-lg text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isScanning}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-primary text-on-primary font-semibold rounded-lg hover:bg-inverse-surface shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">check</span>
+                  <span>Confirmar &amp; Salvar Lançamento</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
