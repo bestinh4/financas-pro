@@ -58,6 +58,8 @@ interface FinanceContextType {
   deleteTransaction: (id: string) => void;
   executeTransfer: (transfer: Omit<InternalTransfer, 'id' | 'status'>) => boolean;
   addAccount: (account: Omit<Account, 'id' | 'isActive'>) => void;
+  addCreditCard: (card: Omit<CreditCard, 'id'>) => boolean;
+  addBudget: (budget: CategoryBudget) => boolean;
   updateBudget: (category: string, newLimit: number) => void;
   payCardInvoice: (cardId: string, fromAccountId: string, amount: number) => boolean;
   resetToDefaultData: () => void;
@@ -381,6 +383,35 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     showToast('Nova Conta Cadastrada', `${newAcc.name} foi integrada ao patrimônio consolidado.`, 'success');
   };
 
+  const addCreditCard = (cardData: Omit<CreditCard, 'id'>): boolean => {
+    if (!cardData.name.trim() || !cardData.issuer.trim() || !accounts.some((account) => account.id === cardData.linkedAccountId) ||
+        !Number.isFinite(cardData.limit) || cardData.limit <= 0 ||
+        !Number.isInteger(cardData.closingDay) || cardData.closingDay < 1 || cardData.closingDay > 31 ||
+        !Number.isInteger(cardData.dueDay) || cardData.dueDay < 1 || cardData.dueDay > 31) {
+      showToast('Dados do cartão inválidos', 'Confira nome, emissor, limite, vencimento, fechamento e conta vinculada.', 'warning');
+      return false;
+    }
+    const card: CreditCard = { ...cardData, id: 'card-' + Date.now() };
+    setCreditCards((prev) => [...prev, card]);
+    showToast('Cartão cadastrado', card.name + ' foi adicionado ao controle de cartões.', 'success');
+    return true;
+  };
+
+  const addBudget = (budget: CategoryBudget): boolean => {
+    const category = budget.category.trim();
+    if (!category || !Number.isFinite(budget.limit) || budget.limit <= 0) {
+      showToast('Orçamento inválido', 'Informe uma categoria e um limite mensal maior que zero.', 'warning');
+      return false;
+    }
+    if (budgets.some((item) => item.category.toLowerCase() === category.toLowerCase())) {
+      showToast('Categoria já cadastrada', 'Edite o orçamento existente para essa categoria.', 'warning');
+      return false;
+    }
+    setBudgets((prev) => [...prev, { ...budget, category }]);
+    showToast('Orçamento criado', 'O limite mensal de ' + category + ' foi cadastrado.', 'success');
+    return true;
+  };
+
   const updateBudget = (category: string, newLimit: number) => {
     setBudgets((prev) =>
       prev.map((b) => (b.category === category ? { ...b, limit: newLimit } : b))
@@ -479,6 +510,8 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteTransaction,
         executeTransfer,
         addAccount,
+        addCreditCard,
+        addBudget,
         updateBudget,
         payCardInvoice,
         resetToDefaultData,
