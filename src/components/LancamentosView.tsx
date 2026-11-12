@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { getLocalDateISO } from '../utils/date';
 import { Transaction } from '../types';
 import { parseCurrencyInput } from '../utils/currency';
 
@@ -25,7 +26,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
   // Form state for inline creation
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateISO(),
     description: '',
     amount: '',
     type: 'Despesa' as 'Despesa' | 'Receita',
@@ -87,7 +88,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
     });
 
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateISO(),
       description: '',
       amount: '',
       type: 'Despesa',

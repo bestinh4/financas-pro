@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { getLocalDateISO } from '../utils/date';
 import { Account, CreditCard, InternalTransfer, Transaction, CategoryBudget, ActiveTab } from '../types';
 
 export interface ToastMessage {
@@ -431,7 +432,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Register bank debit transaction for paying the card with anti-dupla contagem flag
     const paymentTx: Transaction = {
       id: `tx-pay-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateISO(),
       description: `Pagamento de Fatura ${cardName}`,
       category: 'Outros',
       type: 'Despesa',
