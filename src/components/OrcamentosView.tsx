@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 export const OrcamentosView: React.FC = () => {
   const { budgets, categoryBreakdown, updateBudget, showToast } = useFinance();
@@ -26,7 +27,7 @@ export const OrcamentosView: React.FC = () => {
   };
 
   const handleSaveBudget = (cat: string) => {
-    const parsed = parseFloat(newLimitInput);
+    const parsed = parseCurrencyInput(newLimitInput);
     if (isNaN(parsed) || parsed <= 0) {
       showToast('Teto Inválido', 'Insira um valor numérico positivo para o orçamento.', 'error');
       return;
