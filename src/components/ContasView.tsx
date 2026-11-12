@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { getLocalDateISO } from '../utils/date';
 import { parseCurrencyInput } from '../utils/currency';
 
 interface ContasViewProps {
@@ -17,7 +18,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
 
   const [isTransferFormOpen, setIsTransferFormOpen] = useState(false);
   const [transfData, setTransfData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateISO(),
     fromAccountId: accounts[0]?.id || '',
     toAccountId: accounts[1]?.id || '',
     amount: '',
@@ -60,7 +61,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
 
     if (success) {
       setTransfData({
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDateISO(),
         fromAccountId: accounts[0]?.id || '',
         toAccountId: accounts[1]?.id || '',
         amount: '',
