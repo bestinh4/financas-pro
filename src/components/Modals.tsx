@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 interface NewTxModalProps {
   isOpen: boolean;
@@ -143,7 +143,7 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
                 required
                 placeholder="0,00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => setAmount(formatCurrencyInput(e.target.value))}
                 className="bg-surface-container-low p-2 rounded-lg text-on-surface font-semibold border border-transparent focus:border-secondary focus:outline-none"
               />
             </div>
@@ -346,7 +346,7 @@ export const NewAccountModal: React.FC<NewAccountModalProps> = ({ isOpen, onClos
               required
               placeholder="0,00"
               value={initialBalance}
-              onChange={(e) => setInitialBalance(e.target.value)}
+              onChange={(e) => setInitialBalance(formatCurrencyInput(e.target.value))}
               className="bg-surface-container-low p-2 rounded-lg text-on-surface font-semibold border border-transparent focus:border-secondary focus:outline-none"
             />
           </div>
