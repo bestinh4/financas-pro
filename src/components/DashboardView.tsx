@@ -182,10 +182,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="flex items-center justify-end gap-space-sm">
           <div className="hidden xl:flex flex-col text-right">
             <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-              Última Conciliação
+              Origem dos dados
             </span>
             <span className="font-label-md text-label-md text-on-surface font-semibold">
-              Sem sincronização bancária
+              Registros deste dispositivo
             </span>
           </div>
 
@@ -238,10 +238,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-space-md flex items-center gap-1.5 pt-space-xs">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold">
-              +12.0%
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">vs mês anterior</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Total registrado no período</span>
           </div>
         </div>
 
@@ -263,10 +260,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="mt-space-md flex items-center gap-1.5 pt-space-xs">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-error font-label-sm text-label-sm font-semibold">
-              -4.0%
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">redução de custos</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Total registrado no período</span>
           </div>
         </div>
 
