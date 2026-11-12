@@ -1,0 +1,6 @@
+{
+  "name": "Finanças Pro - Executivo 2.0",
+  "description": "Sistema executivo de gestão financeira pessoal e empresarial, conciliação de contas, fluxo de caixa, cartões e governança orçamentária.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
