@@ -334,8 +334,8 @@ export const NewAccountModal: React.FC<NewAccountModalProps> = ({ isOpen, onClos
               Saldo Inicial (R$)
             </label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               required
               placeholder="0,00"
               value={initialBalance}
