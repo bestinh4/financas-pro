@@ -182,8 +182,8 @@ export const OrcamentosView: React.FC = () => {
               {editingCategory === b.category ? (
                 <div className="mt-4 pt-3 border-t border-surface-container flex items-center gap-2">
                   <input
-                    type="number"
-                    step="50"
+                    type="text"
+                    inputMode="decimal"
                     value={newLimitInput}
                     onChange={(e) => setNewLimitInput(e.target.value)}
                     className="w-full bg-surface-container-low text-body-sm text-on-surface p-1.5 rounded-lg border border-secondary focus:outline-none"
