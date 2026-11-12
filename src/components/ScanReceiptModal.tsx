@@ -432,3 +432,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
             </form>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
