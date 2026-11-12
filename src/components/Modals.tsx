@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface NewTxModalProps {
   isOpen: boolean;
@@ -15,20 +16,27 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'Despesa' | 'Receita'>('Despesa');
   const [category, setCategory] = useState('Moradia');
-  const [accountOrCard, setAccountOrCard] = useState(accounts[0]?.id || 'itau');
+  const [accountOrCard, setAccountOrCard] = useState(accounts[0]?.id || creditCards[0]?.id || '');
   const [notes, setNotes] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(amount);
+    const val = parseCurrencyInput(amount);
     if (!description.trim() || isNaN(val) || val <= 0) {
       showToast('Campos Obrigatórios', 'Preencha uma descrição válida e um valor positivo.', 'warning');
       return;
     }
 
     const isCard = creditCards.some((c) => c.id === accountOrCard);
+    const selectedAccount = accounts.find((account) => account.id === accountOrCard);
+    const selectedCard = creditCards.find((card) => card.id === accountOrCard);
+    const linkedAccount = selectedCard ? accounts.find((account) => account.id === selectedCard.linkedAccountId) : selectedAccount;
+    if (!linkedAccount) {
+      showToast('Conta necessária', 'Cadastre uma conta bancária válida antes de registrar este lançamento ou vincule o cartão a uma conta existente.', 'warning');
+      return;
+    }
 
     addTransaction({
       date,
@@ -37,7 +45,7 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
       type,
       category,
       paymentMethod: isCard ? 'cartao' : 'conta',
-      accountId: isCard ? 'itau' : accountOrCard,
+      accountId: linkedAccount.id,
       cardId: isCard ? accountOrCard : undefined,
       status: type === 'Receita' ? 'Recebido' : 'Pago',
       notes: notes.trim() || undefined,
@@ -157,10 +165,11 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
               Conta ou Cartão
             </label>
             <select
-              value={accountOrCard}
+              value={accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
               onChange={(e) => setAccountOrCard(e.target.value)}
               className="bg-surface-container-low p-2 rounded-lg text-on-surface border border-transparent focus:border-secondary focus:outline-none cursor-pointer"
             >
+              <option value="" disabled>Selecione uma conta ou cartão</option>
               <optgroup label="Contas Bancárias">
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -230,7 +239,11 @@ export const NewAccountModal: React.FC<NewAccountModalProps> = ({ isOpen, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const balance = parseFloat(initialBalance) || 0;
+    const balance = initialBalance.trim() ? parseCurrencyInput(initialBalance) : 0;
+    if (!Number.isFinite(balance) || balance < 0) {
+      showToast('Saldo inválido', 'Informe um saldo inicial válido usando vírgula ou ponto decimal.', 'warning');
+      return;
+    }
     if (!name.trim()) {
       showToast('Campo Obrigatório', 'Informe o nome da instituição ou conta.', 'warning');
       return;

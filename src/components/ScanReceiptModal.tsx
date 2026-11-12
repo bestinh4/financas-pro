@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface ScanReceiptModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     date: new Date().toISOString().split('T')[0],
     type: 'Despesa' as 'Despesa' | 'Receita',
     category: 'Alimentação',
-    accountOrCard: 'itau',
+    accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
     notes: '',
   });
 
@@ -53,7 +54,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       date: new Date().toISOString().split('T')[0],
       type: 'Despesa',
       category: 'Alimentação',
-      accountOrCard: 'itau',
+      accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
       notes: '',
     });
   };
@@ -87,11 +88,13 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       setExtractedData(data);
 
       // Determine best matching account or card
-      let matchedAcc = 'itau';
-      if (data.paymentMethod === 'cartao') {
-        matchedAcc = data.suggestedAccountOrCard === 'nubank' ? 'nubank' : 'xp';
-      } else if (data.suggestedAccountOrCard && accounts.some((a) => a.id === data.suggestedAccountOrCard)) {
+      let matchedAcc = '';
+      if (data.suggestedAccountOrCard && (accounts.some((a) => a.id === data.suggestedAccountOrCard) || creditCards.some((card) => card.id === data.suggestedAccountOrCard))) {
         matchedAcc = data.suggestedAccountOrCard;
+      } else if (data.paymentMethod === 'cartao' && creditCards.length > 0) {
+        matchedAcc = creditCards[0].id;
+      } else if (accounts.length > 0) {
+        matchedAcc = accounts[0].id;
       }
 
       setFormData({
@@ -122,8 +125,15 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      setErrorMessage('Por favor, envie um arquivo de imagem (JPG, PNG, WEBP) ou PDF.');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('Formato não suportado. Envie JPG, PNG, WEBP ou PDF.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMessage('O arquivo excede o limite de 10 MB. Escolha um arquivo menor.');
+      e.target.value = '';
       return;
     }
 
@@ -138,90 +148,21 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     reader.readAsDataURL(file);
   };
 
-  // Demo samples for quick demonstration without needing physical receipt
-  const loadDemoSample = (type: 'restaurante' | 'supermercado' | 'pix') => {
-    setIsScanning(true);
-    setErrorMessage(null);
-
-    // Create lightweight demo canvas receipt image
-    const canvas = document.createElement('canvas');
-    canvas.width = 400;
-    canvas.height = 550;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#fefcf9';
-      ctx.fillRect(0, 0, 400, 550);
-      ctx.fillStyle = '#222';
-      ctx.font = 'bold 16px monospace';
-      ctx.textAlign = 'center';
-
-      if (type === 'restaurante') {
-        ctx.fillText('RESTAURANTE LA GUAPA LTDA', 200, 40);
-        ctx.font = '12px monospace';
-        ctx.fillText('CNPJ: 28.192.481/0001-92', 200, 65);
-        ctx.fillText('Rua dos Pinheiros, 381 - São Paulo/SP', 200, 85);
-        ctx.fillText('--------------------------------------', 200, 110);
-        ctx.textAlign = 'left';
-        ctx.fillText('02x ALMOCO EXECUTIVO ....... R$ 78,00', 30, 150);
-        ctx.fillText('02x SUCO NATURAL LARANJA ... R$ 22,00', 30, 180);
-        ctx.fillText('01x SOBREMESA ARTESANAL .... R$ 16,50', 30, 210);
-        ctx.fillText('TAXA DE SERVICO (10%) ...... R$ 11,65', 30, 240);
-        ctx.fillText('--------------------------------------', 200, 280);
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('VALOR TOTAL: R$ 128,15', 30, 320);
-        ctx.font = '13px monospace';
-        ctx.fillText('FORMA: CARTAO DE CREDITO VISA', 30, 360);
-        ctx.fillText('DATA: 10/10/2024 - 13:42:10', 30, 390);
-      } else if (type === 'supermercado') {
-        ctx.fillText('PAO DE ACUCAR SUPERMERCADOS', 200, 40);
-        ctx.font = '12px monospace';
-        ctx.fillText('NFC-e No. 000.419.821 Serie 001', 200, 65);
-        ctx.fillText('--------------------------------------', 200, 100);
-        ctx.textAlign = 'left';
-        ctx.fillText('01x CAFE GOURMET 500G ...... R$ 34,90', 30, 140);
-        ctx.fillText('02x LEITE VEGETAL AMENDOA .. R$ 29,80', 30, 170);
-        ctx.fillText('01x QUEIJO BRIE 200G ....... R$ 28,50', 30, 200);
-        ctx.fillText('01x AZEITE EXTRA VIRGEM .... R$ 42,90', 30, 230);
-        ctx.fillText('--------------------------------------', 200, 270);
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('TOTAL A PAGAR: R$ 136,10', 30, 310);
-        ctx.font = '13px monospace';
-        ctx.fillText('FORMA: CARTAO MASTERCARD', 30, 350);
-        ctx.fillText('DATA: 18/10/2024 - 19:15:02', 30, 380);
-      } else {
-        ctx.fillText('COMPROVANTE DE TRANSFERENCIA PIX', 200, 40);
-        ctx.font = '12px monospace';
-        ctx.fillText('BANCO ITAU UNIBANCO S.A.', 200, 65);
-        ctx.fillText('--------------------------------------', 200, 100);
-        ctx.textAlign = 'left';
-        ctx.fillText('FAVORECIDO: ENEL DISTRIBUICAO SP', 30, 140);
-        ctx.fillText('CHAVE PIX: contas@enel.com.br', 30, 170);
-        ctx.fillText('IDENTIFICADOR: LUZ_OUTUBRO_2024', 30, 200);
-        ctx.fillText('--------------------------------------', 200, 240);
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('VALOR: R$ 342,80', 30, 280);
-        ctx.font = '13px monospace';
-        ctx.fillText('DEBITO: CONTA CORRENTE ITAU', 30, 320);
-        ctx.fillText('DATA: 15/10/2024 - 09:20:15', 30, 350);
-      }
-    }
-
-    const dataUrl = canvas.toDataURL('image/jpeg');
-    const base64Pure = dataUrl.split(',')[1];
-    setImagePreview(dataUrl);
-    setMimeType('image/jpeg');
-    processImage(base64Pure, 'image/jpeg');
-  };
-
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(formData.amount);
+    const val = parseCurrencyInput(formData.amount);
     if (!formData.description.trim() || isNaN(val) || val <= 0) {
       showToast('Campos Inválidos', 'Verifique o valor e a descrição antes de salvar.', 'warning');
       return;
     }
 
-    const isCard = creditCards.some((c) => c.id === formData.accountOrCard);
+    const selectedCard = creditCards.find((card) => card.id === formData.accountOrCard);
+    const isCard = Boolean(selectedCard);
+    const linkedAccount = selectedCard ? accounts.find((account) => account.id === selectedCard.linkedAccountId) : accounts.find((account) => account.id === formData.accountOrCard);
+    if (!linkedAccount) {
+      showToast('Conta necessária', 'Cadastre uma conta bancária ou vincule o cartão a uma conta existente antes de registrar o comprovante.', 'warning');
+      return;
+    }
 
     addTransaction({
       date: formData.date,
@@ -230,7 +171,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       type: formData.type,
       category: formData.category,
       paymentMethod: isCard ? 'cartao' : 'conta',
-      accountId: isCard ? 'itau' : formData.accountOrCard,
+      accountId: linkedAccount.id,
       cardId: isCard ? formData.accountOrCard : undefined,
       status: formData.type === 'Receita' ? 'Recebido' : 'Pago',
       notes: formData.notes.trim() ? `[IA Scanner] ${formData.notes.trim()}` : '[Lançamento via Scanner IA]',
@@ -253,9 +194,6 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                 <h3 className="font-headline-md text-headline-md text-on-surface">
                   Scanner Inteligente com IA
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed tracking-wide uppercase">
-                  Gemini 3.8
-                </span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 Envie a foto de um comprovante, cupom ou nota fiscal para preenchimento automático.
@@ -284,7 +222,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                 Tire uma foto ou selecione o comprovante
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-sm">
-                Formatos suportados: PNG, JPG, JPEG, WEBP ou PDF (até 25MB)
+                Formatos suportados: JPG, PNG, WEBP ou PDF (até 10 MB)
               </span>
 
               <button
@@ -297,45 +235,13 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,application/pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 capture="environment"
                 className="hidden"
                 onChange={handleFileChange}
               />
             </div>
 
-            {/* Demo Samples */}
-            <div className="p-3 bg-surface-container-low/60 rounded-xl border border-surface-container flex flex-col gap-2">
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">
-                Testar Imediatamente com Amostras:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => loadDemoSample('restaurante')}
-                  className="px-3 py-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface text-left rounded-lg border border-surface-container text-body-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-secondary">restaurant</span>
-                  <span className="truncate">Almoço La Guapa</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => loadDemoSample('supermercado')}
-                  className="px-3 py-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface text-left rounded-lg border border-surface-container text-body-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-secondary">shopping_cart</span>
-                  <span className="truncate">Pão de Açúcar</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => loadDemoSample('pix')}
-                  className="px-3 py-2 bg-surface-container-lowest hover:bg-surface-container text-on-surface text-left rounded-lg border border-surface-container text-body-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-secondary">flash_on</span>
-                  <span className="truncate">PIX Enel Energia</span>
-                </button>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-space-md">

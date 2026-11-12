@@ -5,7 +5,7 @@ export const CartoesView: React.FC = () => {
   const { creditCards, transactions, accounts, payCardInvoice, showToast } = useFinance();
 
   const [payingCardId, setPayingCardId] = useState<string | null>(null);
-  const [payFromAccount, setPayFromAccount] = useState<string>(accounts[0]?.id || 'itau');
+  const [payFromAccount, setPayFromAccount] = useState<string>(accounts[0]?.id || '');
 
   const formatBRL = (val: number) =>
     val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,8 +22,11 @@ export const CartoesView: React.FC = () => {
       showToast('Fatura Zerada', 'Não há saldo devedor pendente nesta fatura.', 'info');
       return;
     }
-    payCardInvoice(cardId, payFromAccount, invoiceAmount);
-    setPayingCardId(null);
+    if (!accounts.some((account) => account.id === payFromAccount)) {
+      showToast('Conta necessária', 'Cadastre uma conta bancária antes de pagar a fatura.', 'warning');
+      return;
+    }
+    if (payCardInvoice(cardId, payFromAccount, invoiceAmount)) setPayingCardId(null);
   };
 
   return (
@@ -35,7 +38,7 @@ export const CartoesView: React.FC = () => {
             Governança de Crédito
           </span>
           <h2 className="font-headline-md text-headline-md text-on-surface">
-            Cartões &amp; Faturas Futuras
+            Cartões &amp; Faturas
           </h2>
         </div>
 
@@ -47,19 +50,19 @@ export const CartoesView: React.FC = () => {
         </div>
       </div>
 
-      {/* Resumo Visual dos Cartões XP e Nubank */}
+      {/* Resumo dos cartões cadastrados */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
-        {creditCards.map((card) => {
+        {creditCards.map((card, cardIndex) => {
           const invoiceAmount = getCardInvoice(card.id);
           const limitLivre = Math.max(0, card.limit - invoiceAmount);
-          const usedPercent = Math.min(100, (invoiceAmount / card.limit) * 100);
-          const isXP = card.id === 'xp';
+          const usedPercent = card.limit > 0 ? Math.min(100, (invoiceAmount / card.limit) * 100) : 0;
+          const isPrimaryStyle = cardIndex % 2 === 0;
 
           return (
             <div
               key={card.id}
               className={`${
-                isXP
+                isPrimaryStyle
                   ? 'bg-primary-container text-on-primary shadow-card-dark'
                   : 'bg-gradient-to-bl from-secondary-container to-secondary text-on-secondary shadow-card-secondary'
               } rounded-xl p-space-lg shadow-card-hover relative overflow-hidden flex flex-col justify-between`}
@@ -68,14 +71,14 @@ export const CartoesView: React.FC = () => {
                 <div>
                   <span
                     className={`font-label-sm text-label-sm ${
-                      isXP ? 'text-primary-fixed' : 'text-secondary-fixed'
+                      isPrimaryStyle ? 'text-primary-fixed' : 'text-secondary-fixed'
                     } uppercase tracking-widest font-semibold`}
                   >
                     {card.issuer}
                   </span>
                   <h3
                     className={`font-headline-md text-headline-md ${
-                      isXP ? 'text-on-primary' : 'text-on-secondary'
+                      isPrimaryStyle ? 'text-on-primary' : 'text-on-secondary'
                     } mt-1`}
                   >
                     {card.name}
@@ -83,26 +86,24 @@ export const CartoesView: React.FC = () => {
                 </div>
                 <span
                   className={`material-symbols-outlined ${
-                    isXP ? 'text-tertiary-fixed' : 'text-secondary-fixed'
+                    isPrimaryStyle ? 'text-tertiary-fixed' : 'text-secondary-fixed'
                   } text-[32px]`}
                 >
-                  {isXP ? 'contactless' : 'credit_card'}
+                  {isPrimaryStyle ? 'contactless' : 'credit_card'}
                 </span>
               </div>
 
               <div className="my-space-md">
                 <span
                   className={`font-label-sm text-label-sm ${
-                    isXP ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'
+                    isPrimaryStyle ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'
                   }`}
                 >
-                  {isXP
-                    ? `Fatura Fechada (Venc. ${card.dueDay}/Nov)`
-                    : `Fatura em Aberto (Venc. ${card.dueDay}/Nov)`}
+                  Vencimento: dia {card.dueDay}
                 </span>
                 <div
                   className={`font-metric-display text-metric-display ${
-                    isXP ? 'text-on-primary' : 'text-on-secondary'
+                    isPrimaryStyle ? 'text-on-primary' : 'text-on-secondary'
                   } font-bold`}
                 >
                   R$ {formatBRL(invoiceAmount)}
@@ -111,16 +112,16 @@ export const CartoesView: React.FC = () => {
 
               <div className="flex flex-col gap-2 pt-space-xs border-t border-white/20">
                 <div className="flex justify-between font-label-sm text-label-sm">
-                  <span className={isXP ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'}>
+                  <span className={isPrimaryStyle ? 'text-primary-fixed-dim' : 'text-secondary-fixed-dim'}>
                     Limite Usado: R$ {formatBRL(invoiceAmount)}
                   </span>
-                  <span className={isXP ? 'text-tertiary-fixed font-semibold' : 'text-white font-semibold'}>
+                  <span className={isPrimaryStyle ? 'text-tertiary-fixed font-semibold' : 'text-white font-semibold'}>
                     Limite Livre: R$ {formatBRL(limitLivre)}
                   </span>
                 </div>
                 <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
                   <div
-                    className={`${isXP ? 'bg-tertiary-fixed' : 'bg-secondary-fixed'} h-full rounded-full transition-all duration-500`}
+                    className={`${isPrimaryStyle ? 'bg-tertiary-fixed' : 'bg-secondary-fixed'} h-full rounded-full transition-all duration-500`}
                     style={{ width: `${usedPercent}%` }}
                   ></div>
                 </div>
@@ -170,81 +171,7 @@ export const CartoesView: React.FC = () => {
         })}
       </div>
 
-      {/* Projeção de Faturas Futuras e Parcelamentos */}
-      <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-card-prominent border border-surface-container/60 flex flex-col gap-space-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">
-              Planejamento Futuro
-            </span>
-            <h3 className="font-headline-md text-headline-md text-on-surface">
-              Projeção de Faturas (Próximos Meses)
-            </h3>
-          </div>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">
-            Total Comprometido Futuro: <strong>R$ 6.310,00</strong>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-xs">
-          <div className="p-space-md bg-surface-container-low/60 rounded-xl flex flex-col justify-between border border-surface-container/40">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-title-md text-title-md text-on-surface font-semibold">
-                  Novembro 2024
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-label-sm font-semibold bg-tertiary-fixed text-on-tertiary-fixed">
-                  A Vencer
-                </span>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                XP: R$ 2.840,20 | Nu: R$ 1.540,00
-              </span>
-            </div>
-            <div className="font-metric-display text-metric-display text-on-surface font-bold mt-space-md">
-              R$ 4.380,20
-            </div>
-          </div>
-
-          <div className="p-space-md bg-surface-container-low/60 rounded-xl flex flex-col justify-between border border-surface-container/40">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-title-md text-title-md text-on-surface font-semibold">
-                  Dezembro 2024
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-label-sm font-semibold bg-surface-container text-on-surface-variant">
-                  Previsto
-                </span>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                Parcelas fixas + compras agendadas
-              </span>
-            </div>
-            <div className="font-metric-display text-metric-display text-on-surface font-bold mt-space-md">
-              R$ 1.250,00
-            </div>
-          </div>
-
-          <div className="p-space-md bg-surface-container-low/60 rounded-xl flex flex-col justify-between border border-surface-container/40">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-title-md text-title-md text-on-surface font-semibold">
-                  Janeiro 2025
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-label-sm font-semibold bg-surface-container text-on-surface-variant">
-                  Previsto
-                </span>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                Parcelamentos de viagens &amp; equipamentos
-              </span>
-            </div>
-            <div className="font-metric-display text-metric-display text-on-surface font-bold mt-space-md">
-              R$ 679,80
-            </div>
-          </div>
-        </div>
-      </div>
+      {creditCards.length === 0 && <div className="bg-surface-container-lowest rounded-xl p-space-lg border border-surface-container text-center text-on-surface-variant">Nenhum cartão cadastrado. Os cartões aparecerão aqui após serem adicionados.</div>}
     </div>
   );
 };

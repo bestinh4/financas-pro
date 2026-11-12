@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { ActiveTab } from '../types';
 
@@ -8,8 +8,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setIsMobileOpen }) => {
-  const { activeTab, setActiveTab, resetToDefaultData, transactions, accounts } = useFinance();
-  const [confirmReset, setConfirmReset] = useState(false);
+  const { activeTab, setActiveTab, transactions, accounts } = useFinance();
 
   const navItems: { id: ActiveTab; label: string; icon: string; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -18,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setIsMobileOpen 
     { id: 'cartoes-e-faturas', label: 'Cartões & Faturas', icon: 'credit_card' },
     { id: 'orcamento-e-metas', label: 'Orçamento & Metas', icon: 'target' },
     { id: 'relatorios', label: 'Relatórios & DRE', icon: 'monitoring' },
+    { id: 'configuracoes', label: 'Configurações', icon: 'settings' },
   ];
 
   const handleNavClick = (tabId: ActiveTab) => {
@@ -123,46 +123,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setIsMobileOpen 
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" title="Online & Operacional"></span>
             </div>
             <span className="font-metric-data text-metric-data text-on-surface font-semibold">
-              Auditoria Contábil
+              Dados locais
             </span>
             <span className="font-label-sm text-label-sm text-on-surface-variant">
-              Sincronizado via Open Finance
+              Armazenado neste dispositivo
             </span>
           </div>
 
-          {confirmReset ? (
-            <div className="bg-surface-container p-2.5 rounded-lg border border-secondary/30 flex flex-col gap-2 animate-in fade-in duration-150">
-              <span className="font-label-sm text-xs font-semibold text-on-surface">
-                Restaurar dados de amostra padrão?
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => {
-                    resetToDefaultData();
-                    setConfirmReset(false);
-                  }}
-                  className="flex-1 py-1 px-2 bg-primary text-on-primary rounded text-label-sm font-semibold hover:bg-inverse-surface transition-colors"
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={() => setConfirmReset(false)}
-                  className="py-1 px-2 text-on-surface-variant hover:text-on-surface rounded text-label-sm transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmReset(true)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-on-surface-variant hover:text-secondary hover:bg-surface-container-low rounded-lg transition-colors font-label-sm text-label-sm cursor-pointer"
-              title="Redefinir dados para o estado inicial"
-            >
-              <span className="material-symbols-outlined text-[16px]">restart_alt</span>
-              <span>Restaurar Amostra Padrão</span>
-            </button>
-          )}
+
         </div>
       </aside>
     </>

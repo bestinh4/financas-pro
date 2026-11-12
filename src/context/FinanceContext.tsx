@@ -1,13 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { Account, CreditCard, InternalTransfer, Transaction, CategoryBudget, ActiveTab } from '../types';
-import {
-  INITIAL_ACCOUNTS,
-  INITIAL_CREDIT_CARDS,
-  INITIAL_TRANSACTIONS,
-  INITIAL_TRANSFERS,
-  INITIAL_BUDGETS,
-  MONTHLY_HISTORY_2024,
-} from '../data/initialData';
 
 export interface ToastMessage {
   id: string;
@@ -67,8 +59,11 @@ interface FinanceContextType {
   executeTransfer: (transfer: Omit<InternalTransfer, 'id' | 'status'>) => boolean;
   addAccount: (account: Omit<Account, 'id' | 'isActive'>) => void;
   updateBudget: (category: string, newLimit: number) => void;
-  payCardInvoice: (cardId: string, fromAccountId: string, amount: number) => void;
+  payCardInvoice: (cardId: string, fromAccountId: string, amount: number) => boolean;
   resetToDefaultData: () => void;
+  clearAllData: () => void;
+  profileName: string;
+  updateProfileName: (name: string) => void;
 
   // Notifications
   toasts: ToastMessage[];
@@ -78,64 +73,36 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
-const STORAGE_KEY_PREFIX = 'financas_pro_v2_';
+const STORAGE_KEY_PREFIX = 'financas_pro_v3_';
+const LEGACY_STORAGE_KEY_PREFIX = 'financas_pro_v2_';
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Navigation & Filters
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [selectedMonth, setSelectedMonth] = useState<string>('10');
-  const [selectedYear, setSelectedYear] = useState<string>('2024');
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, '0'));
+  const [selectedYear, setSelectedYear] = useState<string>(() => String(new Date().getFullYear()));
   const [filterAccount, setFilterAccount] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Persistent States
-  const [accounts, setAccounts] = useState<Account[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}accounts`);
-      return saved ? JSON.parse(saved) : INITIAL_ACCOUNTS;
-    } catch {
-      return INITIAL_ACCOUNTS;
-    }
-  });
+  const [accounts, setAccounts] = useState<Account[]>(() => { try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}accounts`) || '[]'); } catch { return []; } });
 
-  const [creditCards, setCreditCards] = useState<CreditCard[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}cards`);
-      return saved ? JSON.parse(saved) : INITIAL_CREDIT_CARDS;
-    } catch {
-      return INITIAL_CREDIT_CARDS;
-    }
-  });
+  const [creditCards, setCreditCards] = useState<CreditCard[]>(() => { try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}cards`) || '[]'); } catch { return []; } });
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}transactions`);
-      return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
-    } catch {
-      return INITIAL_TRANSACTIONS;
-    }
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>(() => { try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}transactions`) || '[]'); } catch { return []; } });
 
-  const [transfers, setTransfers] = useState<InternalTransfer[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}transfers`);
-      return saved ? JSON.parse(saved) : INITIAL_TRANSFERS;
-    } catch {
-      return INITIAL_TRANSFERS;
-    }
-  });
+  const [transfers, setTransfers] = useState<InternalTransfer[]>(() => { try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}transfers`) || '[]'); } catch { return []; } });
 
-  const [budgets, setBudgets] = useState<CategoryBudget[]>(() => {
-    try {
-      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}budgets`);
-      return saved ? JSON.parse(saved) : INITIAL_BUDGETS;
-    } catch {
-      return INITIAL_BUDGETS;
-    }
-  });
+  const [budgets, setBudgets] = useState<CategoryBudget[]>(() => { try { return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}budgets`) || '[]'); } catch { return []; } });
+  const [profileName, setProfileName] = useState<string>(() => localStorage.getItem(`${STORAGE_KEY_PREFIX}profile`) || '');
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Remove only this application's previous demo-storage namespace. Other apps' data is untouched.
+  useEffect(() => {
+    Object.keys(localStorage).filter((key) => key.startsWith(LEGACY_STORAGE_KEY_PREFIX)).forEach((key) => localStorage.removeItem(key));
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -158,6 +125,8 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.setItem(`${STORAGE_KEY_PREFIX}budgets`, JSON.stringify(budgets));
   }, [budgets]);
 
+  useEffect(() => { localStorage.setItem(`${STORAGE_KEY_PREFIX}profile`, profileName); }, [profileName]);
+
   // Toast Helpers
   const showToast = (title: string, description?: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
@@ -171,69 +140,19 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Dynamic Account Balances
-  // Initial Balance + Active Receitas - Active Bank Despesas + Transfers In - Transfers Out
+  // Account balances are derived exclusively from the user's own records.
   const accountBalances = useMemo(() => {
     const balances: Record<string, number> = {};
-
-    accounts.forEach((acc) => {
-      balances[acc.id] = acc.initialBalance;
-    });
-
-    const initialTxMap = new Map(INITIAL_TRANSACTIONS.map((tx) => [tx.id, tx]));
-    const currentTxMap = new Map(transactions.map((tx) => [tx.id, tx]));
-
-    // 1. Initial transactions that were altered (inactivated or deleted)
-    INITIAL_TRANSACTIONS.forEach((initTx) => {
-      const current = currentTxMap.get(initTx.id);
-      const wasActiveInitially = !initTx.isInactive;
-      const isCurrentlyActive = current ? !current.isInactive : false;
-
-      if (wasActiveInitially && !isCurrentlyActive) {
-        if (initTx.paymentMethod === 'conta' && balances[initTx.accountId] !== undefined) {
-          if (initTx.type === 'Receita') {
-            balances[initTx.accountId] -= initTx.amount;
-          } else {
-            balances[initTx.accountId] += initTx.amount;
-          }
-        }
-      } else if (!wasActiveInitially && isCurrentlyActive) {
-        if (initTx.paymentMethod === 'conta' && balances[initTx.accountId] !== undefined) {
-          if (initTx.type === 'Receita') {
-            balances[initTx.accountId] += initTx.amount;
-          } else {
-            balances[initTx.accountId] -= initTx.amount;
-          }
-        }
-      }
-    });
-
-    // 2. Brand new transactions (not in initial baseline)
+    accounts.forEach((account) => { balances[account.id] = Number(account.initialBalance) || 0; });
     transactions.forEach((tx) => {
-      if (!initialTxMap.has(tx.id) && !tx.isInactive && tx.paymentMethod === 'conta') {
-        if (balances[tx.accountId] !== undefined) {
-          if (tx.type === 'Receita') {
-            balances[tx.accountId] += tx.amount;
-          } else {
-            balances[tx.accountId] -= tx.amount;
-          }
-        }
-      }
+      if (tx.isInactive || tx.paymentMethod !== 'conta' || balances[tx.accountId] === undefined) return;
+      balances[tx.accountId] += tx.type === 'Receita' ? tx.amount : -tx.amount;
     });
-
-    // 3. Transfers delta
-    const initialTransferIds = new Set(INITIAL_TRANSFERS.map((t) => t.id));
-    transfers.forEach((tr) => {
-      if (!initialTransferIds.has(tr.id) && tr.status === 'Ativo') {
-        if (balances[tr.fromAccountId] !== undefined) {
-          balances[tr.fromAccountId] -= tr.amount;
-        }
-        if (balances[tr.toAccountId] !== undefined) {
-          balances[tr.toAccountId] += tr.amount;
-        }
-      }
+    transfers.forEach((transfer) => {
+      if (transfer.status !== 'Ativo') return;
+      if (balances[transfer.fromAccountId] !== undefined) balances[transfer.fromAccountId] -= transfer.amount;
+      if (balances[transfer.toAccountId] !== undefined) balances[transfer.toAccountId] += transfer.amount;
     });
-
     return balances;
   }, [accounts, transactions, transfers]);
 
@@ -353,21 +272,17 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     return result;
   }, [activeMonthTransactions]);
 
-  // Dynamic Cash Flow for 2024
+  // Rolling 12-month cash flow, calculated only from real user transactions.
   const cashFlowHistory = useMemo(() => {
-    return MONTHLY_HISTORY_2024.map((item, idx) => {
-      const monthNum = (idx + 1).toString().padStart(2, '0');
-      if (monthNum === selectedMonth && selectedYear === '2024') {
-        return {
-          month: item.month,
-          receitas: monthlyReceitas,
-          despesas: monthlyDespesas,
-          liquido: resultadoLiquido,
-        };
-      }
-      return item;
+    const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return monthLabels.map((monthLabel, index) => {
+      const month = String(index + 1).padStart(2, '0');
+      const rows = transactions.filter((tx) => !tx.isInactive && tx.date?.startsWith(selectedYear + '-' + month));
+      const receitas = rows.filter((tx) => tx.type === 'Receita').reduce((sum, tx) => sum + tx.amount, 0);
+      const despesas = rows.filter((tx) => tx.type === 'Despesa' && !tx.isInvoicePayment).reduce((sum, tx) => sum + tx.amount, 0);
+      return { month: monthLabel, receitas, despesas, liquido: receitas - despesas };
     });
-  }, [selectedMonth, selectedYear, monthlyReceitas, monthlyDespesas, resultadoLiquido]);
+  }, [transactions, selectedYear]);
 
   // Actions
   const addTransaction = (txData: Omit<Transaction, 'id' | 'isInactive'>) => {
@@ -426,17 +341,18 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     const available = accountBalances[transferData.fromAccountId] || 0;
-    if (transferData.amount <= 0) {
+    if (!Number.isFinite(transferData.amount) || transferData.amount <= 0) {
       showToast('Valor Inválido', 'O valor da transferência deve ser maior que zero.', 'error');
       return false;
     }
 
+    if (!accounts.some((account) => account.id === transferData.fromAccountId) || !accounts.some((account) => account.id === transferData.toAccountId)) {
+      showToast('Conta inválida', 'Selecione contas cadastradas para realizar a transferência.', 'error');
+      return false;
+    }
     if (transferData.amount > available) {
-      showToast(
-        'Aviso de Saldo Insuficiente',
-        `A conta de origem possui R$ ${available.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}, mas a transferência foi executada sob supervisão contábil.`,
-        'warning'
-      );
+      showToast('Saldo insuficiente', 'A transferência não foi realizada porque o saldo da conta de origem é insuficiente.', 'error');
+      return false;
     }
 
     const newTransfer: InternalTransfer = {
@@ -475,6 +391,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const payCardInvoice = (cardId: string, fromAccountId: string, amount: number) => {
     const card = creditCards.find((c) => c.id === cardId);
     const cardName = card ? card.name : 'Cartão';
+    const openInvoice = transactions.filter((tx) => !tx.isInactive && tx.cardId === cardId && !tx.invoiceSettled).reduce((sum, tx) => sum + tx.amount, 0);
+    if (!card || !accounts.some((account) => account.id === fromAccountId) || !Number.isFinite(amount) || amount <= 0 || Math.abs(amount - openInvoice) > 0.009 || amount > (accountBalances[fromAccountId] || 0)) {
+      showToast('Pagamento não realizado', 'Verifique o cartão, a conta de débito, o valor total da fatura e o saldo disponível.', 'error');
+      return false;
+    }
     
     // Register bank debit transaction for paying the card with anti-dupla contagem flag
     const paymentTx: Transaction = {
@@ -507,28 +428,19 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       `R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} pagos via débito em conta. Limite restabelecido.`,
       'success'
     );
+    return true;
   };
 
-  const resetToDefaultData = () => {
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}accounts`);
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}cards`);
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}transactions`);
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}transfers`);
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}budgets`);
-
-    setAccounts(INITIAL_ACCOUNTS);
-    setCreditCards(INITIAL_CREDIT_CARDS);
-    setTransactions(INITIAL_TRANSACTIONS);
-    setTransfers(INITIAL_TRANSFERS);
-    setBudgets(INITIAL_BUDGETS);
-    setSelectedMonth('10');
-    setSelectedYear('2024');
-    setFilterAccount('all');
-    setFilterCategory('all');
-    setSearchTerm('');
-
-    showToast('Dados Restaurados', 'Todos os parâmetros executivos foram redefinidos para o padrão original.', 'info');
+  const clearAllData = () => {
+    Object.keys(localStorage).filter((key) => key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith(LEGACY_STORAGE_KEY_PREFIX)).forEach((key) => localStorage.removeItem(key));
+    setAccounts([]); setCreditCards([]); setTransactions([]); setTransfers([]); setBudgets([]); setProfileName('');
+    setSelectedMonth(String(new Date().getMonth() + 1).padStart(2, '0')); setSelectedYear(String(new Date().getFullYear()));
+    setFilterAccount('all'); setFilterCategory('all'); setSearchTerm('');
+    showToast('Dados apagados', 'Os dados financeiros e o perfil deste aplicativo foram removidos deste dispositivo.', 'success');
   };
+
+  const resetToDefaultData = clearAllData;
+  const updateProfileName = (name: string) => setProfileName(name.trim().slice(0, 80));
 
   return (
     <FinanceContext.Provider
@@ -570,6 +482,9 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateBudget,
         payCardInvoice,
         resetToDefaultData,
+        clearAllData,
+        profileName,
+        updateProfileName,
         toasts,
         showToast,
         removeToast,
