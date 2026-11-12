@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "Finanças Pro",
+  "short_name": "Finanças Pro",
+  "description": "Seu controle financeiro pessoal, sempre à mão.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8f9ff",
+  "theme_color": "#071b50",
+  "icons": [
+    {
+      "src": "/icons/financas-pro-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
