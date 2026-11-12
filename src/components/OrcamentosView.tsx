@@ -88,7 +88,10 @@ export const OrcamentosView: React.FC = () => {
           <h3 className="font-title-lg text-title-lg text-on-surface font-semibold">Novo limite mensal</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Categoria
-              <input required maxLength={50} value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Ex.: Alimentação" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+              <select required value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface">
+                <option value="">Selecione uma categoria</option>
+                {['Moradia', 'Alimentação', 'Transporte', 'Saúde & Cuidados', 'Lazer & Cultura', 'Outros'].map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
             </label>
             <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Limite mensal (R$)
               <input required inputMode="decimal" value={newBudgetLimit} onChange={(e) => setNewBudgetLimit(e.target.value)} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
