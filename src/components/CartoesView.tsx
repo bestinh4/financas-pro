@@ -71,7 +71,7 @@ export const CartoesView: React.FC = () => {
           >
             + Novo cartão
           </button>
-
+          {accounts.length === 0 && <button type="button" onClick={() => setActiveTab('contas')} className="px-3 py-2 rounded-lg border border-surface-container text-on-surface font-semibold">Cadastrar conta primeiro</button>}
         </div>
 
         <div className="flex items-center gap-space-sm bg-surface-container-low px-3 py-1.5 rounded-lg border border-secondary/20">
