@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
+import { parseCurrencyInput } from '../utils/currency';
 
 interface NewTxModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const NewTxModal: React.FC<NewTxModalProps> = ({ isOpen, onClose, onOpenS
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseFloat(amount);
+    const val = parseCurrencyInput(amount);
     if (!description.trim() || isNaN(val) || val <= 0) {
       showToast('Campos Obrigatórios', 'Preencha uma descrição válida e um valor positivo.', 'warning');
       return;
@@ -238,7 +239,11 @@ export const NewAccountModal: React.FC<NewAccountModalProps> = ({ isOpen, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const balance = parseFloat(initialBalance) || 0;
+    const balance = initialBalance.trim() ? parseCurrencyInput(initialBalance) : 0;
+    if (!Number.isFinite(balance) || balance < 0) {
+      showToast('Saldo inválido', 'Informe um saldo inicial válido usando vírgula ou ponto decimal.', 'warning');
+      return;
+    }
     if (!name.trim()) {
       showToast('Campo Obrigatório', 'Informe o nome da instituição ou conta.', 'warning');
       return;
