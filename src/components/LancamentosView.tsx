@@ -53,10 +53,16 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
       return;
     }
 
-    const selectedCard = creditCards.find((card) => card.id === formData.accountOrCard);
+    const hasCurrentSelection =
+      accounts.some((account) => account.id === formData.accountOrCard) ||
+      creditCards.some((card) => card.id === formData.accountOrCard);
+    const effectiveAccountOrCard = hasCurrentSelection
+      ? formData.accountOrCard
+      : accounts[0]?.id || creditCards[0]?.id || '';
+    const selectedCard = creditCards.find((card) => card.id === effectiveAccountOrCard);
     const linkedAccount = selectedCard
       ? accounts.find((account) => account.id === selectedCard.linkedAccountId)
-      : accounts.find((account) => account.id === formData.accountOrCard);
+      : accounts.find((account) => account.id === effectiveAccountOrCard);
 
     if (!linkedAccount) {
       showToast('Conta necessária', 'Selecione uma conta válida ou vincule o cartão a uma conta cadastrada.', 'warning');
@@ -300,7 +306,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
               ) : (
                 <select
                   required
-                  value={formData.accountOrCard}
+                  value={formData.accountOrCard || accounts[0]?.id || creditCards[0]?.id || ''}
                   onChange={(e) => setFormData({ ...formData, accountOrCard: e.target.value })}
                   className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface focus:outline-none border border-transparent focus:border-secondary cursor-pointer"
                 >
