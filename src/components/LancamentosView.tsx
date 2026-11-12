@@ -235,7 +235,6 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
                 type="text"
                 inputMode="decimal"
                 required
-                required
                 placeholder="0,00"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
