@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 export const OrcamentosView: React.FC = () => {
   const { budgets, categoryBreakdown, addBudget, updateBudget, showToast } = useFinance();
@@ -41,7 +41,7 @@ export const OrcamentosView: React.FC = () => {
 
   const handleStartEdit = (cat: string, currentLimit: number) => {
     setEditingCategory(cat);
-    setNewLimitInput(currentLimit.toString());
+    setNewLimitInput(formatCurrencyInput(String(currentLimit)));
   };
 
   const handleSaveBudget = (cat: string) => {
@@ -94,7 +94,7 @@ export const OrcamentosView: React.FC = () => {
               </select>
             </label>
             <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Limite mensal (R$)
-              <input required inputMode="decimal" value={newBudgetLimit} onChange={(e) => setNewBudgetLimit(e.target.value)} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+              <input required inputMode="decimal" value={newBudgetLimit} onChange={(e) => setNewBudgetLimit(formatCurrencyInput(e.target.value))} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
             </label>
           </div>
           <div className="flex justify-end gap-2">
@@ -188,7 +188,7 @@ export const OrcamentosView: React.FC = () => {
                     type="text"
                     inputMode="decimal"
                     value={newLimitInput}
-                    onChange={(e) => setNewLimitInput(e.target.value)}
+                    onChange={(e) => setNewLimitInput(formatCurrencyInput(e.target.value))}
                     className="w-full bg-surface-container-low text-body-sm text-on-surface p-1.5 rounded-lg border border-secondary focus:outline-none"
                     placeholder="Novo teto R$"
                   />

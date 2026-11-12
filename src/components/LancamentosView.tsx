@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { getLocalDateISO } from '../utils/date';
 import { Transaction } from '../types';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 interface LancamentosViewProps {
   onOpenScanReceipt?: () => void;
@@ -245,7 +245,7 @@ export const LancamentosView: React.FC<LancamentosViewProps> = ({ onOpenScanRece
                 required
                 placeholder="0,00"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, amount: formatCurrencyInput(e.target.value) })}
                 className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface font-semibold focus:outline-none border border-transparent focus:border-secondary"
               />
             </div>

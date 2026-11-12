@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { getLocalDateISO } from '../utils/date';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 interface ContasViewProps {
   onOpenNewAccountModal: () => void;
@@ -302,7 +302,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
                 required
                 placeholder="Ex: 5.000,00"
                 value={transfData.amount}
-                onChange={(e) => setTransfData({ ...transfData, amount: e.target.value })}
+                onChange={(e) => setTransfData({ ...transfData, amount: formatCurrencyInput(e.target.value) })}
                 className="bg-surface-container-low p-2 rounded-lg text-body-md text-on-surface font-semibold focus:outline-none border border-transparent focus:border-secondary"
               />
             </div>

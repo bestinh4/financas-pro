@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { getLocalDateISO } from '../utils/date';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 interface ScanReceiptModalProps {
   isOpen: boolean;
@@ -100,7 +100,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
 
       setFormData({
         description: data.description || 'Despesa Comercial',
-        amount: data.amount ? data.amount.toString() : '',
+        amount: data.amount ? formatCurrencyInput(String(data.amount)) : '',
         date: data.date || getLocalDateISO(),
         type: data.type === 'Receita' ? 'Receita' : 'Despesa',
         category: data.category || 'Outros',
@@ -330,7 +330,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
                       inputMode="decimal"
                       required
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, amount: formatCurrencyInput(e.target.value) })}
                       className="w-full pl-10 bg-surface-container-low border border-surface-container rounded-lg p-2.5 text-headline-md font-bold text-on-surface focus:outline-none focus:border-secondary"
                       placeholder="0,00"
                     />
