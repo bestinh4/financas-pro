@@ -31,7 +31,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     faturasEmAbertoTotal,
     totalLimiteLivre,
     accountBalances,
-    transactions,
     filteredTransactions,
     categoryBreakdown,
     cashFlowHistory,
@@ -40,36 +39,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   } = useFinance();
 
   // Selected account balance or primary liquid account
-  const primaryLiquidBalance = accountBalances['itau'] ?? Object.values(accountBalances)[0] ?? 0;
+  const primaryLiquidBalance = Object.values(accountBalances)[0] ?? 0;
 
   // Format currency
   const formatBRL = (val: number) =>
     val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // Latest transactions reflecting current filters or general active transactions
-  const recentTransactions = filteredTransactions.length > 0
-    ? filteredTransactions.slice(0, 4)
-    : transactions.slice(0, 4);
+  const recentTransactions = filteredTransactions.slice(0, 4);
 
   // Compute highest expense category for center of Donut
   const topCategory = categoryBreakdown.length > 0 ? categoryBreakdown[0] : null;
 
   // Budget calculations
   const moradiaBudget = budgets.find((b) => b.category.includes('Moradia')) || {
-    limit: 4200,
+    limit: 0,
     category: 'Moradia & Contas',
   };
   const moradiaSpent =
-    categoryBreakdown.find((c) => c.category.toLowerCase().includes('moradia'))?.amount || 3800;
-  const moradiaPercent = Math.min(100, Math.round((moradiaSpent / moradiaBudget.limit) * 100));
+    categoryBreakdown.find((c) => c.category.toLowerCase().includes('moradia'))?.amount || 0;
+  const moradiaPercent = moradiaBudget.limit > 0 ? Math.min(100, Math.round((moradiaSpent / moradiaBudget.limit) * 100)) : 0;
 
   const alimentacaoBudget = budgets.find((b) => b.category.includes('Restaurantes') || b.category.includes('Alimentação')) || {
-    limit: 1500,
+    limit: 0,
     category: 'Restaurantes & Bares',
   };
   const alimentacaoSpent =
-    categoryBreakdown.find((c) => c.category.toLowerCase().includes('alimenta'))?.amount || 1320;
-  const alimentacaoPercent = Math.min(100, Math.round((alimentacaoSpent / alimentacaoBudget.limit) * 100));
+    categoryBreakdown.find((c) => c.category.toLowerCase().includes('alimenta'))?.amount || 0;
+  const alimentacaoPercent = alimentacaoBudget.limit > 0 ? Math.min(100, Math.round((alimentacaoSpent / alimentacaoBudget.limit) * 100)) : 0;
 
   // Compute dynamic SVG parameters for the Cashflow bar chart
   const maxBarValue = Math.max(...cashFlowHistory.map((m) => Math.max(m.receitas, m.despesas)), 20000);
@@ -139,9 +136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onChange={(e) => setSelectedYear(e.target.value)}
               className="bg-transparent font-title-md text-title-md text-on-surface focus:outline-none cursor-pointer"
             >
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-              <option value="2025">2025</option>
+              {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map((year) => <option key={year} value={String(year)}>{year}</option>)}
             </select>
           </div>
 
@@ -190,7 +185,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Última Conciliação
             </span>
             <span className="font-label-md text-label-md text-on-surface font-semibold">
-              Hoje, às 14:32
+              Sem sincronização bancária
             </span>
           </div>
 
@@ -504,11 +499,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-space-xs text-on-surface">
               <span className="material-symbols-outlined text-secondary text-[20px]">insights</span>
               <span className="font-body-md text-body-md font-medium">
-                Média Líquida Mensal: <strong>R$ 5.920,40</strong>
+                Resultado líquido no período: <strong>R$ {formatBRL(resultadoLiquido)}</strong>
               </span>
             </div>
             <span className="font-label-sm text-label-sm text-on-surface-variant">
-              Taxa de conformidade de orçamento: <strong>94.2%</strong>
+              Indicadores calculados conforme os dados cadastrados
             </span>
           </div>
         </div>
@@ -606,7 +601,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container font-body-md text-body-md">
-                {recentTransactions.map((tx) => {
+                {recentTransactions.length === 0 ? <tr><td colSpan={6} className="py-8 text-center text-on-surface-variant">Nenhum lançamento cadastrado neste período.</td></tr> : recentTransactions.map((tx) => {
                   const isDesp = tx.type === 'Despesa';
                   const accountObj = accounts.find((a) => a.id === tx.accountId);
                   const isInactive = tx.isInactive;
@@ -639,7 +634,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </td>
                       <td className="py-3 px-3 text-on-surface-variant">{tx.category}</td>
                       <td className="py-3 px-3 text-on-surface-variant">
-                        {accountObj?.name || (tx.cardId === 'xp' ? 'Cartão XP' : 'Cartão Nubank')}
+                        {accountObj?.name || (tx.cardId ? 'Cartão cadastrado' : 'Conta não identificada')}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span
@@ -684,7 +679,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h3 className="font-headline-md text-headline-md text-on-surface">Metas do Mês</h3>
             </div>
             <span className="font-label-sm text-label-sm bg-surface-container-low text-on-surface px-2.5 py-1 rounded-lg border border-surface-container">
-              7 dias restantes
+              Período selecionado
             </span>
           </div>
 
@@ -722,7 +717,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ></div>
               </div>
               <div className="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                <span>{moradiaPercent <= 95 ? 'Dentro do Planejado' : 'Atenção ao teto'}</span>
+                <span>{moradiaBudget.limit > 0 ? (moradiaPercent <= 95 ? 'Dentro do planejado' : 'Atenção ao teto') : 'Defina um orçamento'}</span>
                 <span>Saldo: R$ {formatBRL(Math.max(0, moradiaBudget.limit - moradiaSpent))}</span>
               </div>
             </div>
@@ -758,7 +753,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ></div>
               </div>
               <div className="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                <span className="text-secondary font-medium">Atenção: ritmo acelerado</span>
+                <span className="text-secondary font-medium">{alimentacaoBudget.limit > 0 ? (alimentacaoPercent >= 85 ? 'Atenção ao limite' : 'Dentro do limite') : 'Defina um orçamento'}</span>
                 <span>Saldo: R$ {formatBRL(Math.max(0, alimentacaoBudget.limit - alimentacaoSpent))}</span>
               </div>
             </div>

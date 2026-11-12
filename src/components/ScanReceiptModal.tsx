@@ -34,7 +34,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
     date: new Date().toISOString().split('T')[0],
     type: 'Despesa' as 'Despesa' | 'Receita',
     category: 'Alimentação',
-    accountOrCard: 'itau',
+    accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
     notes: '',
   });
 
@@ -53,7 +53,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       date: new Date().toISOString().split('T')[0],
       type: 'Despesa',
       category: 'Alimentação',
-      accountOrCard: 'itau',
+      accountOrCard: accounts[0]?.id || creditCards[0]?.id || '',
       notes: '',
     });
   };
@@ -87,11 +87,13 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       setExtractedData(data);
 
       // Determine best matching account or card
-      let matchedAcc = 'itau';
-      if (data.paymentMethod === 'cartao') {
-        matchedAcc = data.suggestedAccountOrCard === 'nubank' ? 'nubank' : 'xp';
-      } else if (data.suggestedAccountOrCard && accounts.some((a) => a.id === data.suggestedAccountOrCard)) {
+      let matchedAcc = '';
+      if (data.suggestedAccountOrCard && (accounts.some((a) => a.id === data.suggestedAccountOrCard) || creditCards.some((card) => card.id === data.suggestedAccountOrCard))) {
         matchedAcc = data.suggestedAccountOrCard;
+      } else if (data.paymentMethod === 'cartao' && creditCards.length > 0) {
+        matchedAcc = creditCards[0].id;
+      } else if (accounts.length > 0) {
+        matchedAcc = accounts[0].id;
       }
 
       setFormData({
@@ -221,7 +223,13 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       return;
     }
 
-    const isCard = creditCards.some((c) => c.id === formData.accountOrCard);
+    const selectedCard = creditCards.find((card) => card.id === formData.accountOrCard);
+    const isCard = Boolean(selectedCard);
+    const linkedAccount = selectedCard ? accounts.find((account) => account.id === selectedCard.linkedAccountId) : accounts.find((account) => account.id === formData.accountOrCard);
+    if (!linkedAccount) {
+      showToast('Conta necessária', 'Cadastre uma conta bancária ou vincule o cartão a uma conta existente antes de registrar o comprovante.', 'warning');
+      return;
+    }
 
     addTransaction({
       date: formData.date,
@@ -230,7 +238,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({ isOpen, onCl
       type: formData.type,
       category: formData.category,
       paymentMethod: isCard ? 'cartao' : 'conta',
-      accountId: isCard ? 'itau' : formData.accountOrCard,
+      accountId: linkedAccount.id,
       cardId: isCard ? formData.accountOrCard : undefined,
       status: formData.type === 'Receita' ? 'Recebido' : 'Pago',
       notes: formData.notes.trim() ? `[IA Scanner] ${formData.notes.trim()}` : '[Lançamento via Scanner IA]',

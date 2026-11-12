@@ -13,6 +13,7 @@ import { ContasView } from './components/ContasView';
 import { CartoesView } from './components/CartoesView';
 import { OrcamentosView } from './components/OrcamentosView';
 import { RelatoriosView } from './components/RelatoriosView';
+import { ConfiguracoesView } from './components/ConfiguracoesView';
 import { NewTxModal, NewAccountModal } from './components/Modals';
 import { ScanReceiptModal } from './components/ScanReceiptModal';
 import { ToastContainer } from './components/Toast';
@@ -73,6 +74,8 @@ const AppContent: React.FC = () => {
           {activeTab === 'orcamento-e-metas' && <OrcamentosView />}
 
           {activeTab === 'relatorios' && <RelatoriosView />}
+
+          {activeTab === 'configuracoes' && <ConfiguracoesView />}
         </main>
       </div>
 

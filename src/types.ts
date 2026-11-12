@@ -65,4 +65,4 @@ export interface CategoryBudget {
   limit: number;
 }
 
-export type ActiveTab = 'dashboard' | 'lancamentos' | 'contas' | 'cartoes-e-faturas' | 'orcamento-e-metas' | 'relatorios';
+export type ActiveTab = 'dashboard' | 'lancamentos' | 'contas' | 'cartoes-e-faturas' | 'orcamento-e-metas' | 'relatorios' | 'configuracoes';

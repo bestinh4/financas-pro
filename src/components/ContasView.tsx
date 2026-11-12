@@ -17,8 +17,8 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
   const [isTransferFormOpen, setIsTransferFormOpen] = useState(false);
   const [transfData, setTransfData] = useState({
     date: new Date().toISOString().split('T')[0],
-    fromAccountId: accounts[0]?.id || 'itau',
-    toAccountId: accounts[2]?.id || 'nubank',
+    fromAccountId: accounts[0]?.id || '',
+    toAccountId: accounts[1]?.id || '',
     amount: '',
     description: '',
   });
@@ -30,6 +30,10 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
 
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (accounts.length < 2 || !accounts.some((a) => a.id === transfData.fromAccountId) || !accounts.some((a) => a.id === transfData.toAccountId)) {
+      setErrorMessage('Cadastre pelo menos duas contas para realizar uma transferência.');
+      return;
+    }
     if (transfData.fromAccountId === transfData.toAccountId) {
       setErrorMessage('A conta de origem e destino não podem ser iguais. Selecione contas distintas.');
       return;
@@ -56,8 +60,8 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
     if (success) {
       setTransfData({
         date: new Date().toISOString().split('T')[0],
-        fromAccountId: accounts[0]?.id || 'itau',
-        toAccountId: accounts[2]?.id || 'nubank',
+        fromAccountId: accounts[0]?.id || '',
+        toAccountId: accounts[1]?.id || '',
         amount: '',
         description: '',
       });
@@ -82,7 +86,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
             Gestão de Contas &amp; Transferências
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Controle de custodiantes, fluxo de caixa entre contas próprias e conciliação bancária
+            Controle de contas e fluxo de caixa entre contas próprias
           </p>
         </div>
 
@@ -96,6 +100,8 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
           </button>
 
           <button
+            disabled={accounts.length < 2}
+            title={accounts.length < 2 ? 'Cadastre pelo menos duas contas' : 'Nova transferência'}
             onClick={() => setIsTransferFormOpen(!isTransferFormOpen)}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-on-primary rounded-lg hover:bg-inverse-surface transition-colors shadow-sm font-semibold cursor-pointer"
           >
@@ -150,9 +156,9 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
               </div>
 
               <div className="pt-space-xs border-t border-surface-container flex items-center justify-between text-[11px] text-on-surface-variant">
-                <span>{acc.accountNumber || 'Conciliado'}</span>
+                <span>{acc.accountNumber || 'Sem identificação adicional'}</span>
                 <span className="inline-flex items-center font-semibold text-secondary">
-                  Open Finance
+                  Registro local
                 </span>
               </div>
             </div>
@@ -183,7 +189,7 @@ export const ContasView: React.FC<ContasViewProps> = ({ onOpenNewAccountModal })
 
           <div className="mt-space-md pt-space-xs border-t border-surface-tint/30 flex items-center justify-between text-[11px] text-primary-fixed-dim">
             <span>{accounts.length} Instituições ativas</span>
-            <span className="text-tertiary-fixed font-semibold">100% Conciliado</span>
+            <span className="text-tertiary-fixed font-semibold">Dados registrados</span>
           </div>
         </div>
       </div>
