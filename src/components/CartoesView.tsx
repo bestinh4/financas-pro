@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
-import { parseCurrencyInput } from '../utils/currency';
+import { formatCurrencyInput, parseCurrencyInput } from '../utils/currency';
 
 export const CartoesView: React.FC = () => {
   const { creditCards, transactions, accounts, payCardInvoice, addCreditCard, setActiveTab, showToast } = useFinance();
@@ -93,7 +93,7 @@ export const CartoesView: React.FC = () => {
               <input required maxLength={60} value={cardForm.issuer} onChange={(e) => setCardForm({ ...cardForm, issuer: e.target.value })} placeholder="Ex.: Banco emissor" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
             </label>
             <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Limite total (R$)
-              <input required inputMode="decimal" value={cardForm.limit} onChange={(e) => setCardForm({ ...cardForm, limit: e.target.value })} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
+              <input required inputMode="decimal" value={cardForm.limit} onChange={(e) => setCardForm({ ...cardForm, limit: formatCurrencyInput(e.target.value) })} placeholder="0,00" className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface" />
             </label>
             <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">Conta para pagamento
               <select required value={cardForm.linkedAccountId} onChange={(e) => setCardForm({ ...cardForm, linkedAccountId: e.target.value })} className="p-2 rounded-lg bg-surface-container-low border border-surface-container text-on-surface">
